@@ -1,0 +1,4 @@
+# Optional: System Tray-Unterstützung
+# Ohne diese Pakete läuft die GUI trotzdem (nur ohne Tray-Minimieren)
+pystray
+Pillow

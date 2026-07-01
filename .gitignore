@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+k12-fan-helper
+venv/
+.venv/
+.vscode/
