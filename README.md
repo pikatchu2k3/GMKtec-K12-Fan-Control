@@ -1,93 +1,99 @@
-# K12 Fan Control 🌀
+# GMKtec K12 Fan Control 🌀
 
-**GUI-Lüftersteuerung für den GMKtec NucBox K12 (und andere Mini-PCs mit ITE IT5570E EC)**
+**Fan control GUI + CLI for the GMKtec NucBox K12 Mini-PC (and other Mini-PCs with ITE IT5570E EC)**
 
-Steuere Lüftergeschwindigkeit und Performance-Modus deines K12 direkt per
-Desktop-GUI – ohne BIOS-Einstellungen, ohne Kommandozeile.
+Control fan speed and performance mode of your K12 directly from the desktop –
+no BIOS tweaking, no command-line knowledge required.
+
+> 🇩🇪 **German version available:** [`anleitung.md`](anleitung.md) – ausführliche Schritt-für-Schritt-Anleitung auf Deutsch.
 
 ![Screenshot](.github/screenshot.png)
 
-> **Nur K12?** Auch kompatibel mit anderen Mini-PCs, die den ITE IT5570E
-> Embedded Controller nutzen (z. B. AceMagic W1, MinisForum Modelle mit
-> AMD Phoenix APU). Prüfe mit `sensors-detect` ob dein Gerät unterstützt wird.
+> **K12 only?** Also compatible with other Mini-PCs using the ITE IT5570E
+> Embedded Controller (e.g. AceMagic W1, MinisForum models with AMD Phoenix APU).
+> Check with `sensors-detect` to verify your device.
 
 ---
 
 ## Features
 
-- **Live-Status** – CPU/GPU-Temperatur, Lüfter-RPM, Modus (2s Refresh)
-- **Modus-Umschaltung** – Balanced ⚖, Performance ⚡, Silent 🌙 per Knopfdruck
-- **Manuelle Lüftersteuerung** – Slider 0–100 % pro Lüfter, inkl. Auto-Rücksetzung
-- **Dark Theme** – Moderne Optik (Catppuccin Mocha), keine 90er-Jahre-Tkinter
-- **System Tray** – optionales Minimieren in die Taskleiste (pystray)
-- **Autostart** – Direkt in der GUI konfigurierbar
-- **SUID Root Helper** – Kein ständiges Passwort, kein sudo im Terminal nötig
-- **Open Source** – 80 Zeilen C Helper, auditierbar, keine obskuren Binaries
+- **Live status** – CPU/GPU temperature, fan RPM, current mode (2s auto-refresh)
+- **Mode switching** – Balanced ⚖, Performance ⚡, Silent 🌙 at the click of a button
+- **Manual fan control** – Sliders 0–100 % per fan, with auto-reset
+- **Dark theme** – Modern look (Catppuccin Mocha), no 90s-style Tkinter
+- **System tray** – Optional minimise to tray (requires `pystray`)
+- **Autostart** – Configurable right inside the GUI
+- **SUID root helper** – No constant password prompts, no sudo in the terminal
+- **Open source** – 80-line C helper, fully auditable, no obscure binaries
 
 ---
 
-## Installation
+## Quick Start
 
-### Voraussetzungen
+### Prerequisites
 
-| Paket | Fedora | Ubuntu/Debian | Arch |
-|-------|--------|---------------|------|
+| Package | Fedora | Ubuntu/Debian | Arch |
+|---------|--------|---------------|------|
 | Python 3 + venv | `python3` | `python3 python3-venv` | `python` |
 | tkinter | `python3-tkinter` | `python3-tk` | `tk` |
 | GCC | `gcc` | `build-essential` | `base-devel` |
 
-### Installieren
+### Install
 
 ```bash
-git clone https://github.com/dein-user/k12-fan.git
-cd k12-fan
+git clone https://github.com/pikatchu2k3/GMKtec-K12-Fan-Control.git
+cd GMKtec-K12-Fan-Control
 chmod +x install.sh
 ./install.sh
 ```
 
-Das Script:
-1. Kompiliert den C-Helfer (`k12-fan-helper`)
-2. Installiert ihn als SUID-root in `/usr/lib/k12-fan/`
-3. Legt ein Python-Venv in `~/.local/share/k12-fan/venv/` an
-4. Installiert optionale Abhängigkeiten (pystray für Tray)
-5. Erstellt Desktop-Eintrag und Icon
-6. Polkit-Regel für alternative Berechtigung (optional)
+The script will:
+1. Compile the C helper (`k12-fan-helper`)
+2. Install it as SUID-root in `/usr/lib/k12-fan/`
+3. Create a Python venv in `~/.local/share/k12-fan/venv/`
+4. Install optional dependencies (pystray for system tray)
+5. Create a desktop entry and icon
+6. Add a Polkit rule for alternative permission handling (optional)
 
-Danach ist **K12 Fan Control** im Anwendungsmenü verfügbar.
+After installation, **K12 Fan Control** appears in your application menu.
 
 ---
 
-## Manuelle Nutzung
+## Usage
 
-### GUI starten
+### Launch the GUI
+
 ```bash
-# Aus dem Anwendungsmenü
-# Oder Terminal:
+# From the application menu (search "K12 Fan Control")
+# Or from the terminal:
 ~/.local/bin/k12-fan-gui
 
-# Mit eigenem Helper-Pfad:
-python3 k12-fan-gui.py --helper /pfad/zum/k12-fan-helper
+# With a custom helper path:
+python3 k12-fan-gui.py --helper /path/to/k12-fan-helper
 ```
 
-### Helper direkt (CLI)
+### CLI (direct helper commands)
+
 ```bash
-# Status abfragen
+# Query status
 /usr/lib/k12-fan/k12-fan-helper status
 
-# Modus setzen (0=Balanced, 1=Performance, 2=Silent)
+# Set mode (0=Balanced, 1=Performance, 2=Silent)
 /usr/lib/k12-fan/k12-fan-helper mode 1
 
-# Lüfter manuell (0=Auto, 1-100=%)
+# Manual fan control (0=Auto, 1-100=%)
 /usr/lib/k12-fan/k12-fan-helper fan1 40
 /usr/lib/k12-fan/k12-fan-helper fan2 60
 
-# Alles zurücksetzen
+# Reset everything to automatic
 /usr/lib/k12-fan/k12-fan-helper auto
 ```
 
+> **No `sudo` needed** – the SUID binary handles privilege elevation for you.
+
 ---
 
-## Deinstallation
+## Uninstall
 
 ```bash
 sudo rm -rf /usr/lib/k12-fan/
@@ -100,44 +106,51 @@ rm -f ~/.local/share/icons/hicolor/*/apps/k12-fan.svg
 
 ---
 
-## Sicherheit
+## German Manual
 
-Der C-Helfer ist SUID root und greift auf `/dev/mem` zu.
-Das klingt dramatisch – ist aber kontrolliert:
+There's a **detailed German step-by-step guide** covering the GUI, CLI, and FAQs:
 
-| Gefahr | Maßnahme |
-|--------|----------|
-| Beliebiges /dev/mem lesen | Helper akzeptiert **keine rohen Adressen**. Die EC-Base `0xFE0B0400` ist hardcodiert. |
-| EC-Register zerstören | Helper schreibt NUR auf bekannte Lüfter-/Modus-Register (0x31–0x38, 0x70–0x71). |
-| Missbrauch durch andere User | Helper kann nur Lüfter steuern – kein Zugriff auf RAM, Kernel oder Dateien. |
-| SUID-Binary | Nur **80 Zeilen C**, vollständig auditierbar. Alternativ via Polkit nutzbar. |
+➡️ **[`anleitung.md`](anleitung.md)** (auf Deutsch)
 
-**Alternativ ohne SUID:** `pkexec` wird automatisch als Fallback probiert.
+---
+
+## Security
+
+The C helper is SUID root and accesses `/dev/mem`. This sounds dramatic but is tightly controlled:
+
+| Concern | Mitigation |
+|---------|-----------|
+| Arbitrary /dev/mem reads | Helper accepts **no raw addresses**. The EC base `0xFE0B0400` is hardcoded. |
+| EC register damage | Helper writes ONLY to known fan/mode registers (0x31–0x38, 0x70–0x71). |
+| Abuse by other users | Helper can only control fans – no access to RAM, kernel, or files. |
+| SUID binary | Only **80 lines of C**, fully auditable. Polkit fallback available. |
+
+**Alternative without SUID:** `pkexec` is tried automatically as a fallback.
 
 ---
 
 ## EC Register Map
 
-| Addr | R/W | Beschreibung |
+| Addr | R/W | Description |
 |------|-----|-------------|
-| 0x31 | R   | Aktueller Modus (0=Balanced, 1=Performance, 2=Silent) |
-| 0x32 | W   | Modus setzen (0x80=Balanced, 0x81=Performance, 0x82=Silent) |
-| 0x33 | R/W | Fan 1: 0=Auto, 0x80\|%=manuell |
-| 0x34 | R/W | Fan 2: 0=Auto, 0x80\|%=manuell |
+| 0x31 | R   | Current mode (0=Balanced, 1=Performance, 2=Silent) |
+| 0x32 | W   | Set mode (0x80=Balanced, 0x81=Performance, 0x82=Silent) |
+| 0x33 | R/W | Fan 1: 0=Auto, 0x80\|%=manual |
+| 0x34 | R/W | Fan 2: 0=Auto, 0x80\|%=manual |
 | 0x35-0x36 | R | Fan 1 RPM (high/low byte) |
 | 0x37-0x38 | R | Fan 2 RPM (high/low byte) |
-| 0x70 | R   | CPU-Temperatur (°C) |
-| 0x71 | R   | GPU-Temperatur (°C) |
+| 0x70 | R   | CPU temperature (°C) |
+| 0x71 | R   | GPU temperature (°C) |
 
 ---
 
-## Lizenz
+## License
 
-GPL-2.0-only – siehe [LICENSE](LICENSE).
+GPL-2.0-only – see [LICENSE](LICENSE).
 
 ---
 
-## Verwandte Projekte
+## Related Projects
 
-- [passiveEndeavour/it5570-fan](https://github.com/passiveEndeavour/it5570-fan) – Linux Kernel Modul für ITE IT5570
-- [coolercontrol](https://gitlab.com/coolercontrol/coolercontrol) – Universelle Lüftersteuerung (nutzt hwmon-Schnittstelle)
+- [passiveEndeavour/it5570-fan](https://github.com/passiveEndeavour/it5570-fan) – Linux kernel module for ITE IT5570
+- [coolercontrol](https://gitlab.com/coolercontrol/coolercontrol) – Universal fan control (uses hwmon interface)
