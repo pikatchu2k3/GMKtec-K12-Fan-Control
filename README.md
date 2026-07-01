@@ -5,7 +5,7 @@
 Control fan speed and performance mode of your K12 directly from the desktop –
 no BIOS tweaking, no command-line knowledge required.
 
-> ⚠️ **Early version** – this is a first release. The code was created with assistance from AI tools (DeepSeek, Gemini). Feedback and contributions welcome!
+> ⚠️ **Early version** – this is a first release. The code was created with AI assistance. Feedback and contributions welcome!
 
 > 🇩🇪 **German version available:** [`anleitung.md`](anleitung.md) – ausführliche Schritt-für-Schritt-Anleitung auf Deutsch.
 
