@@ -29,7 +29,8 @@ VENV_DIR="${REAL_HOME}/.local/share/${APP_NAME}/venv"
 DESKTOP_DIR="${REAL_HOME}/.local/share/applications"
 BIN_DIR="${REAL_HOME}/.local/bin"
 HELPER_BIN="${INSTALL_DIR}/k12-fan-helper"
-GUI_SCRIPT="${SCRIPT_DIR}/k12-fan-gui.py"
+GUI_SCRIPT_SRC="${SCRIPT_DIR}/k12-fan-gui.py"
+GUI_SCRIPT_DST="${INSTALL_DIR}/k12-fan-gui.py"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -104,14 +105,20 @@ if [ "$IS_ROOT" = true ]; then
     chown root:root "$HELPER_BIN"
     chmod u+s "$HELPER_BIN"
     chmod 755 "$HELPER_BIN"
+    cp "$GUI_SCRIPT_SRC" "$GUI_SCRIPT_DST"
+    chmod 755 "$GUI_SCRIPT_DST"
     log "Helper nach ${HELPER_BIN} installiert (SUID root)"
+    log "GUI-Skript nach ${GUI_SCRIPT_DST} kopiert"
 else
     sudo mkdir -p "$INSTALL_DIR"
     sudo cp k12-fan-helper "$HELPER_BIN"
     sudo chown root:root "$HELPER_BIN"
     sudo chmod u+s "$HELPER_BIN"
     sudo chmod 755 "$HELPER_BIN"
+    sudo cp "$GUI_SCRIPT_SRC" "$GUI_SCRIPT_DST"
+    sudo chmod 755 "$GUI_SCRIPT_DST"
     log "Helper nach ${HELPER_BIN} installiert (SUID root)"
+    log "GUI-Skript nach ${GUI_SCRIPT_DST} kopiert"
 fi
 
 # Optional: Polkit-Regel (damit pkexec ohne Passwort funktioniert)
@@ -182,7 +189,7 @@ mkdir -p "$BIN_DIR"
 STARTER="${BIN_DIR}/k12-fan-gui"
 cat > "$STARTER" << STARTEREOF
 #!/usr/bin/env bash
-exec "${VENV_DIR}/bin/python" "${GUI_SCRIPT}"
+exec "${VENV_DIR}/bin/python" "${GUI_SCRIPT_DST}"
 STARTEREOF
 chmod +x "$STARTER"
 log "Starter: ${STARTER}"
@@ -200,10 +207,9 @@ Terminal=false
 Categories=System;Hardware;
 Keywords=fan;cooling;k12;gmktec;
 DESKTOPEOF
-chmod +x "$DESKTOP_FILE"
 
 # Icon für Desktop-Eintrag
-ICON_DIR="${HOME}/.local/share/icons/hicolor/64x64/apps"
+ICON_DIR="${REAL_HOME}/.local/share/icons/hicolor/64x64/apps"
 mkdir -p "$ICON_DIR"
 # Minimales SVG-Icon
 cat > "${ICON_DIR}/k12-fan.svg" << 'ICONEOF'
@@ -214,11 +220,6 @@ cat > "${ICON_DIR}/k12-fan.svg" << 'ICONEOF'
 </svg>
 ICONEOF
 log "Icon installiert"
-
-# Desktop-DB aktualisieren (wenn verfügbar)
-if command -v update-desktop-database &>/dev/null; then
-    update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
-fi
 
 # ─── Fertig ───────────────────────────────────────────────
 echo ""

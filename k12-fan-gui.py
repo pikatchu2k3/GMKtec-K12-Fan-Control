@@ -96,7 +96,7 @@ def call_helper(helper_path, *args):
                     continue  # Nächste Methode versuchen
                 err = proc.stderr.strip() or f"Exit-Code {proc.returncode}"
                 raise HelperError(err)
-        except FileNotFoundError:
+        except OSError:
             continue  # pkexec/sudo nicht vorhanden
         except subprocess.TimeoutExpired:
             raise HelperError("Helper-Aufruf abgelaufen (Timeout)")
@@ -114,6 +114,7 @@ class K12FanGUI:
         self.tray_icon = None
         self.tray_enabled = False
         self._running = True
+        self.refresh_timer = None
 
         # Fenster
         self.root = tk.Tk()
@@ -461,8 +462,10 @@ class K12FanGUI:
             self._show_error(str(e))
             self.status_var.set(f"⚠ Fehler: {str(e)[:50]}")
 
-        # Nächster Refresh
+        # Nächster Refresh – vorherigen Timer abbrechen
         if self._running:
+            if self.refresh_timer:
+                self.root.after_cancel(self.refresh_timer)
             self.refresh_timer = self.root.after(REFRESH_MS, self.refresh)
 
     def set_mode(self, code):
@@ -505,6 +508,9 @@ class K12FanGUI:
         autostart_dir = os.path.expanduser("~/.config/autostart")
         desktop_file = os.path.join(autostart_dir, "k12-fan-gui.desktop")
         gui_path = os.path.abspath(__file__)
+        # Bevorzugt den installierten Starter verwenden (venv-konform)
+        starter_path = os.path.expanduser("~/.local/bin/k12-fan-gui")
+        exec_path = starter_path if os.path.isfile(starter_path) else f"python3 {gui_path}"
 
         if self.autostart_var.get():
             os.makedirs(autostart_dir, exist_ok=True)
@@ -512,7 +518,7 @@ class K12FanGUI:
                 "[Desktop Entry]\n"
                 "Type=Application\n"
                 "Name=K12 Fan Control\n"
-                f"Exec={gui_path}\n"
+                f"Exec={exec_path}\n"
                 "Terminal=false\n"
                 "X-GNOME-Autostart-enabled=true\n"
                 "Categories=System;\n"
@@ -546,6 +552,8 @@ class K12FanGUI:
         """Minimiert das Fenster in den System Tray."""
         if not self.tray_enabled:
             return
+        if self.tray_icon is not None:
+            return  # Bereits aktiv – kein zweites Icon starten
         try:
             import pystray
             from PIL import Image, ImageDraw

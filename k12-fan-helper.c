@@ -239,7 +239,6 @@ static void cmd_fan(int fan, int pct)
         ec_write(reg, 0x00);
         printf("{\"ok\":true,\"fan\":%d,\"mode\":\"auto\"}\n", fan);
     } else {
-        if (pct > 100) pct = 100;
         ec_write(reg, 0x80 | (uint8_t)pct);
         printf("{\"ok\":true,\"fan\":%d,\"pct\":%d,\"mode\":\"manual\"}\n", fan, pct);
     }
