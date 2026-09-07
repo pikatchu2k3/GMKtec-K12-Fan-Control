@@ -19,7 +19,6 @@ import subprocess
 import os
 import sys
 import time
-import platform
 
 # ─── Konfiguration ───────────────────────────────────────────────────────────
 HELPER_PATHS = [
@@ -58,6 +57,17 @@ def find_helper():
     return None
 
 
+def _parse_helper_payload(raw, fallback=""):
+    """Parst Helper-JSON und lehnt Fehler-Payloads (Key 'error') ab."""
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        raise HelperError(fallback or "Ungültige Helper-Antwort")
+    if isinstance(data, dict) and data.get("error"):
+        raise HelperError(str(data["error"]))
+    return data
+
+
 def call_helper(helper_path, *args):
     """Ruft den Helper auf und parst JSON-Antwort.
     
@@ -84,13 +94,11 @@ def call_helper(helper_path, *args):
                 timeout=5,
             )
             if proc.returncode == 0 and proc.stdout:
-                return json.loads(proc.stdout)
+                return _parse_helper_payload(proc.stdout)
             elif proc.returncode == 0 and proc.stderr:
                 # Fallback: Fehler in stderr als JSON
-                try:
-                    return json.loads(proc.stderr)
-                except json.JSONDecodeError:
-                    raise HelperError(proc.stderr.strip())
+                return _parse_helper_payload(
+                    proc.stderr, fallback=proc.stderr.strip())
             else:
                 if attempt_name == "direkt" and proc.returncode != 0:
                     continue  # Nächste Methode versuchen
@@ -110,7 +118,6 @@ def call_helper(helper_path, *args):
 class K12FanGUI:
     def __init__(self, helper_path=None):
         self.helper_path = helper_path or find_helper()
-        self.last_status = {}
         self.tray_icon = None
         self.tray_enabled = False
         self._running = True
@@ -159,7 +166,7 @@ class K12FanGUI:
     def _setup_style(self):
         """Dark Theme über ttk.Style."""
         style = ttk.Style(self.root)
-        theme = style.theme_use("clam")
+        style.theme_use("clam")
 
         style.configure(".", background=COLORS["bg"], foreground=COLORS["text"],
                         fieldbackground=COLORS["surface"], font=("Segoe UI", 10))
@@ -172,26 +179,6 @@ class K12FanGUI:
 
         # Card-Style
         style.configure("Card.TFrame", background=COLORS["surface"], relief="flat")
-
-        # Mode-Buttons
-        style.configure("Mode.TButton", background=COLORS["surface"],
-                        foreground=COLORS["text"], borderwidth=1, focusthickness=0,
-                        font=("Segoe UI", 10))
-        style.map("Mode.TButton",
-                  background=[("active", COLORS["surface2"]), ("selected", COLORS["accent"])],
-                  foreground=[("selected", "#11111b")])
-
-        style.configure("Active.TButton", background=COLORS["accent"],
-                        foreground="#11111b", borderwidth=1, focusthickness=0,
-                        font=("Segoe UI", 10, "bold"))
-        style.map("Active.TButton",
-                  background=[("active", "#9dbdfa")])
-
-        # Danger (Auto / Reset)
-        style.configure("Danger.TButton", background=COLORS["error_bg"],
-                        foreground=COLORS["red"], borderwidth=1, focusthickness=0)
-        style.map("Danger.TButton",
-                  background=[("active", "#4a2020")])
 
         # Scale (Slider)
         style.configure("TScale", background=COLORS["bg"],
@@ -326,14 +313,11 @@ class K12FanGUI:
                               variable=var, length=200,
                               command=lambda v, fid=f_id: self._on_slider(fid, v))
             scale.pack(side="left", padx=6, fill="x", expand=True)
-            # Beim Loslassen an den Helper senden
-            scale.bind("<ButtonRelease-1>",
-                        lambda e, fid=f_id: self._on_slider_release(fid, self.fan_scale_vars[fid].get()))
-            # Drag-Tracking für Refresh-Schutz
+            # Drag-Tracking für Refresh-Schutz + Loslassen (ein einziger Handler)
             scale.bind("<ButtonPress-1>",
                         lambda e, fid=f_id: self.fan_dragging.__setitem__(fid, True))
             scale.bind("<ButtonRelease-1>",
-                        lambda e, fid=f_id: self.fan_dragging.__setitem__(fid, False))
+                        lambda e, fid=f_id: self._on_slider_release(fid, self.fan_scale_vars[fid].get()))
             self.fan_sliders[f_id] = scale
 
             pct_lbl = tk.Label(row, text="  0%", bg=COLORS["surface"],
@@ -402,7 +386,6 @@ class K12FanGUI:
 
         try:
             data = call_helper(self.helper_path, "status")
-            self.last_status = data
             self._hide_error()
 
             # Temperaturen
@@ -472,7 +455,7 @@ class K12FanGUI:
         """Setzt den Lüftermodus."""
         names = {0: "Balanced", 1: "Performance", 2: "Silent"}
         try:
-            result = call_helper(self.helper_path, "mode", str(code))
+            call_helper(self.helper_path, "mode", str(code))
             self.status_var.set(f"✓ Modus: {names.get(code, str(code))}")
             self.refresh()  # Sofort aktualisieren
         except HelperError as e:
@@ -482,7 +465,7 @@ class K12FanGUI:
         """Setzt Lüftergeschwindigkeit (0 = Auto)."""
         cmd = f"fan{fan_id}"
         try:
-            result = call_helper(self.helper_path, cmd, str(pct))
+            call_helper(self.helper_path, cmd, str(pct))
             if pct == 0:
                 self.status_var.set(f"✓ Fan {fan_id}: Auto")
             else:
@@ -500,6 +483,8 @@ class K12FanGUI:
 
     def _on_slider_release(self, fan_id, value):
         """Wird beim Loslassen des Sliders aufgerufen."""
+        # Flag ZUERST löschen, damit set_fan()->refresh() den frischen Wert übernimmt
+        self.fan_dragging[fan_id] = False
         pct = int(float(value))
         self.set_fan(fan_id, pct)
 
@@ -565,15 +550,6 @@ class K12FanGUI:
             draw.ellipse([16, 16, 48, 48], fill="#1e1e2e")
             draw.text((20, 20), "K", fill="#89b4fa")
 
-            def on_click(icon, item):
-                root = self.root
-                if str(item) == "Beenden":
-                    self._running = False
-                    icon.stop()
-                    root.after(0, root.quit)
-                else:
-                    root.after(0, self._restore_from_tray)
-
             menu = pystray.Menu(
                 pystray.MenuItem("Fenster anzeigen", lambda: self.root.after(0, self._restore_from_tray)),
                 pystray.MenuItem("Beenden", lambda: icon.stop() or self.root.after(0, self._on_close)),
@@ -603,7 +579,9 @@ class K12FanGUI:
     def _on_close(self):
         """Wird beim Schließen des Fensters aufgerufen."""
         self._running = False
-        if hasattr(self, "refresh_timer"):
+        # refresh_timer ist immer gesetzt (anfangs None) – auf Wahrheit prüfen,
+        # sonst würde after_cancel(None) eine TclError auslösen.
+        if self.refresh_timer:
             self.root.after_cancel(self.refresh_timer)
         if self.tray_icon:
             self.tray_icon.stop()

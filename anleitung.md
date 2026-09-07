@@ -25,14 +25,19 @@ Dein K12 braucht:
 
 ### 2. Herunterladen
 
-Lade den Ordner `k12-fan-control` von Nextcloud herunter oder kopiere ihn auf deinen K12.
+Klone das GitHub-Repo (oder kopiere eine Kopie von Nextcloud auf den K12):
+
+```bash
+git clone https://github.com/pikatchu2k3/GMKtec-K12-Fan-Control.git
+cd GMKtec-K12-Fan-Control
+```
 
 ### 3. Installieren
 
 Öffne ein Terminal, wechsle in den Ordner und führe aus:
 
 ```bash
-cd k12-fan-control
+cd GMKtec-K12-Fan-Control
 chmod +x install.sh
 ./install.sh
 ```
@@ -185,10 +190,10 @@ rm -f ~/.local/share/icons/hicolor/*/apps/k12-fan.svg
 A: Bei 20% und niedrigen Temperaturen (< 55°C) drehen manche Lüfter gar nicht – das ist normal. Erst bei höherer Last oder mehr Prozent fangen sie an zu laufen.
 
 **F: Kann ich was kaputt machen?**
-A: Nein. Das Schlimmste, was passieren kann: Der K12 wird wärmer oder lauter als nötig. Ein Neustart setzt alles auf die BIOS-Standards zurück.
+A: Nein. Das Schlimmste, was passieren kann: Der K12 wird wärmer oder lauter als nötig. Ein Neustart stellt die automatische Lüftersteuerung wieder her.
 
 **F: Geht das auch unter Windows?**
 A: Nein, nur Linux. Der Helfer greift auf `/dev/mem` zu – das gibt es unter Windows nicht.
 
 **F: Die GUI startet nicht – "tkinter nicht gefunden"?**
-A: Installiere `python3-tk` (Fedora) oder `python3-tk` (Ubuntu) – siehe Installation oben.
+A: Installiere `python3-tkinter` (Fedora) oder `python3-tk` (Ubuntu) – siehe Installation oben.

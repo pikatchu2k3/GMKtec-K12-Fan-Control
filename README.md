@@ -9,8 +9,6 @@ no BIOS tweaking, no command-line knowledge required.
 
 > 🇩🇪 **German version available:** [`anleitung.md`](anleitung.md) – ausführliche Schritt-für-Schritt-Anleitung auf Deutsch.
 
-![Screenshot](.github/screenshot.png)
-
 > **K12 only?** Also compatible with other Mini-PCs using the ITE IT5570E
 > Embedded Controller (e.g. AceMagic W1, MinisForum models with AMD Phoenix APU).
 > Check with `sensors-detect` to verify your device.
@@ -26,7 +24,7 @@ no BIOS tweaking, no command-line knowledge required.
 - **System tray** – Optional minimise to tray (requires `pystray`)
 - **Autostart** – Configurable right inside the GUI
 - **SUID root helper** – No constant password prompts, no sudo in the terminal
-- **Open source** – 80-line C helper, fully auditable, no obscure binaries
+- **Open source** – small C helper (~330 lines), fully auditable, no obscure binaries
 
 ---
 
@@ -125,7 +123,7 @@ The C helper is SUID root and accesses `/dev/mem`. This sounds dramatic but is t
 | Arbitrary /dev/mem reads | Helper accepts **no raw addresses**. The EC base `0xFE0B0400` is hardcoded. |
 | EC register damage | Helper writes ONLY to known fan/mode registers (0x31–0x38, 0x70–0x71). |
 | Abuse by other users | Helper can only control fans – no access to RAM, kernel, or files. |
-| SUID binary | Only **80 lines of C**, fully auditable. Polkit fallback available. |
+| SUID binary | Small, fully auditable C helper (~330 lines). Polkit fallback available. |
 
 **Alternative without SUID:** `pkexec` is tried automatically as a fallback.
 
@@ -148,7 +146,7 @@ The C helper is SUID root and accesses `/dev/mem`. This sounds dramatic but is t
 
 ## License
 
-GPL-2.0-only – see [LICENSE](LICENSE).
+GPL-2.0-only. (License-Datei wird in einem Folge-Commit ergänzt.)
 
 ---
 

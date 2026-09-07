@@ -21,8 +21,9 @@ if [ -n "${SUDO_USER}" ] && [ "${SUDO_USER}" != "root" ]; then
     REAL_USER="${SUDO_USER}"
     REAL_HOME="$(getent passwd "${SUDO_USER}" | cut -d: -f6)"
 else
-    REAL_USER="${USER}"
-    REAL_HOME="${HOME}"
+    # Fallbacks für set -u: auch wenn USER/HOME nicht gesetzt sind (z.B. via su)
+    REAL_USER="${USER:-root}"
+    REAL_HOME="${HOME:-/root}"
 fi
 
 VENV_DIR="${REAL_HOME}/.local/share/${APP_NAME}/venv"
@@ -76,6 +77,7 @@ fi
 
 # 4. Polkit verfügbar (für pkexec – optional aber empfohlen)?
 HAVE_POLKIT=false
+POLKIT_FILE=""   # immer definieren, sonst unbound unter set -u bei fehlendem pkexec
 if command -v pkexec &>/dev/null; then
     HAVE_POLKIT=true
 fi
@@ -94,7 +96,8 @@ echo "--- Schritt 1: C-Helfer kompilieren ---"
 
 cd "$SCRIPT_DIR"
 gcc -O2 -s -Wall -Wextra -o k12-fan-helper k12-fan-helper.c
-log "k12-fan-helper kompiliert (11 KB)"
+HELPER_SIZE="$(du -h k12-fan-helper 2>/dev/null | cut -f1 | tr -d ' ')"
+log "k12-fan-helper kompiliert (${HELPER_SIZE:-~11 KB})"
 
 echo ""
 echo "--- Schritt 2: Helper installieren (sudo) ---"

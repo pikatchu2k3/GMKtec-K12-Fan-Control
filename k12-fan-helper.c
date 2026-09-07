@@ -25,7 +25,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <errno.h>
 
 /* ---- EC Register Map (GMKtec K12 / ITE IT5570E) ---- */
@@ -144,9 +143,9 @@ static void json_escape(const char *src, char *dst, size_t dst_size)
 
 /* ---- Commands ---- */
 
-static void cmd_status(void)
+static int cmd_status(void)
 {
-    if (!ec_init()) return;
+    if (!ec_init()) return 1;
 
     uint8_t f1h = ec_read(REG_FAN1_HI);
     uint8_t f1l = ec_read(REG_FAN1_LO);
@@ -197,11 +196,12 @@ static void cmd_status(void)
     );
 
     ec_close();
+    return 0;
 }
 
-static void cmd_mode(int code)
+static int cmd_mode(int code)
 {
-    if (!ec_init()) return;
+    if (!ec_init()) return 1;
 
     uint8_t val;
     switch (code) {
@@ -211,11 +211,12 @@ static void cmd_mode(int code)
         default:
             fprintf(stderr, "{\"error\":\"Invalid mode: %d (0=Balanced, 1=Performance, 2=Silent)\"}\n", code);
             ec_close();
-            return;
+            return 1;
     }
     ec_write(REG_MODE_CMD, val);
     printf("{\"ok\":true,\"mode_code\":%d}\n", code);
     ec_close();
+    return 0;
 }
 
 static int parse_int(const char *s, int min, int max, int *out)
@@ -229,9 +230,9 @@ static int parse_int(const char *s, int min, int max, int *out)
     return 1;
 }
 
-static void cmd_fan(int fan, int pct)
+static int cmd_fan(int fan, int pct)
 {
-    if (!ec_init()) return;
+    if (!ec_init()) return 1;
 
     uint8_t reg = (fan == 1) ? REG_FAN1_CTRL : REG_FAN2_CTRL;
 
@@ -243,16 +244,18 @@ static void cmd_fan(int fan, int pct)
         printf("{\"ok\":true,\"fan\":%d,\"pct\":%d,\"mode\":\"manual\"}\n", fan, pct);
     }
     ec_close();
+    return 0;
 }
 
-static void cmd_auto(void)
+static int cmd_auto(void)
 {
-    if (!ec_init()) return;
+    if (!ec_init()) return 1;
     ec_write(REG_MODE_CMD, 0x80);   /* Balanced */
     ec_write(REG_FAN1_CTRL, 0x00);  /* Fan 1 auto */
     ec_write(REG_FAN2_CTRL, 0x00);  /* Fan 2 auto */
     printf("{\"ok\":true,\"action\":\"auto\",\"mode\":\"Balanced\",\"fan1\":\"auto\",\"fan2\":\"auto\"}\n");
     ec_close();
+    return 0;
 }
 
 static void print_usage(void)
@@ -279,9 +282,10 @@ int main(int argc, char *argv[])
     }
 
     const char *cmd = argv[1];
+    int rc = 0;
 
     if (strcmp(cmd, "status") == 0) {
-        cmd_status();
+        rc = cmd_status();
     } else if (strcmp(cmd, "mode") == 0) {
         if (argc < 3) {
             fprintf(stderr, "{\"error\":\"Missing mode argument (0=Balanced, 1=Performance, 2=Silent)\"}\n");
@@ -292,7 +296,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "{\"error\":\"Invalid mode value: %s (0=Balanced, 1=Performance, 2=Silent)\"}\n", argv[2]);
             return 1;
         }
-        cmd_mode(code);
+        rc = cmd_mode(code);
     } else if (strcmp(cmd, "fan1") == 0) {
         if (argc < 3) {
             fprintf(stderr, "{\"error\":\"Missing percentage (0-100)\"}\n");
@@ -303,7 +307,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "{\"error\":\"Invalid fan value: %s (0=auto, 1-100=manual)\"}\n", argv[2]);
             return 1;
         }
-        cmd_fan(1, pct);
+        rc = cmd_fan(1, pct);
     } else if (strcmp(cmd, "fan2") == 0) {
         if (argc < 3) {
             fprintf(stderr, "{\"error\":\"Missing percentage (0-100)\"}\n");
@@ -314,9 +318,9 @@ int main(int argc, char *argv[])
             fprintf(stderr, "{\"error\":\"Invalid fan value: %s (0=auto, 1-100=manual)\"}\n", argv[2]);
             return 1;
         }
-        cmd_fan(2, pct);
+        rc = cmd_fan(2, pct);
     } else if (strcmp(cmd, "auto") == 0) {
-        cmd_auto();
+        rc = cmd_auto();
     } else if (strcmp(cmd, "--help") == 0 || strcmp(cmd, "-h") == 0) {
         print_usage();
     } else {
@@ -326,5 +330,5 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    return 0;
+    return rc;
 }
