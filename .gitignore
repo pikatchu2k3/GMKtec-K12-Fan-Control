@@ -5,3 +5,7 @@ k12-fan-helper
 venv/
 .venv/
 .vscode/
+.gradle/
+build/
+__pycache__/
+*.pyc

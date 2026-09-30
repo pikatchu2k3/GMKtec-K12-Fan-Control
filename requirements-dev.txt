@@ -1,0 +1,4 @@
+# Test-Abhängigkeiten für k12-fan
+# Installieren mit:  python3 -m pip install -r requirements-dev.txt
+# (Der C-Helper-Test benötigt zusätzlich gcc.)
+pytest>=7.0
